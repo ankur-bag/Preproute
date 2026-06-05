@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Preproute Test Management Application
+
+A full-stack Next.js application built using TypeScript and Tailwind CSS to manage chapter tests, PYQs, and full mock tests.
+
+## Key Features
+
+1. **Authentication Gate:** Full route protection via httpOnly session cookies and JWT middleware.
+2. **Cascading Dropdowns:** Dynamically queries subjects, topics, and subtopics during test creation and question settings.
+3. **Marking Scheme Customization:** Numeric spinners that restrict marks (e.g. negative wrong answers) and recalculate totals live.
+4. **WYSIWYG Question Editor:** Integrated Tiptap editor with rich formatting commands, option toggles, explanations, and settings.
+5. **Preview & Publish Flow:** Allows moderators to preview the full question set and set published durations (now or scheduled).
+6. **Robust Dual-Mode Mock Fallback:** If the external Preproute backend is offline, the application seamlessly proxies data fetching to a local MongoDB (or in-process memory singleton) seeded with realistic subjects/topics.
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### 1. Configure Environment (`.env.local`)
+
+Create a `.env.local` file at the root of the project:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# JWT Config
+JWT_SECRET=preproute_default_jwt_signing_secret_64_characters_long_for_dev_mode
+JWT_EXPIRES_IN=7d
+
+# External Backend API base
+EXTERNAL_API_BASE=https://admin-moderator-backend-staging.up.railway.app/api
+
+# Local Database Config (Optional fallback)
+# MONGODB_URI=mongodb+srv://<user>:<pass>@cluster.mongodb.net/preproute
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+*Note: If `MONGODB_URI` is omitted or database connection fails, the application automatically defaults to process-level memory storage for sessions, tests, and questions. No configuration is strictly required to test.*
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. Install & Start
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Install dependencies
+npm install
 
-## Learn More
+# Start development server
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+### 3. Log In
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open [http://localhost:3000](http://localhost:3000) and log in with the company moderator credentials:
+- **User ID:** `vedant-admin`
+- **Password:** `vedant123`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Technical Architecture
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Client API Wrapper:** Browser components query `/api/proxy/*` using `clientApi` which automatically appends secure cookies.
+- **Server API Proxy:** Route handlers inside `/app/api/proxy/[...path]/route.ts` decrypt the cookies, retrieve the corresponding external token, and forward queries to the external server. If that request fails, the proxy falls back to `dbController` to serve/mutate local data.
+- **Edge Middleware:** Edge-compatible JWT parser to protect `/dashboard` and `/tests` folders from unauthorized access.
