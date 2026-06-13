@@ -281,7 +281,11 @@ export default function QuestionsPage({ params }: PageProps) {
         throw new Error(qRes.data.message || 'Failed to save questions bulk');
       }
 
-      const returnedIds = qRes.data.data; // array of question IDs
+      const returnedData = qRes.data.data;
+      // Extract IDs if it is an array of objects, otherwise use it directly
+      const returnedIds = Array.isArray(returnedData)
+        ? returnedData.map((item: any) => typeof item === 'object' && item !== null && item.id ? item.id : item)
+        : [];
 
       // 2. Link question IDs to test
       const testPayload = {
@@ -356,9 +360,9 @@ export default function QuestionsPage({ params }: PageProps) {
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-150 select-none">
             <div>
-              <h3 className="font-bold text-gray-950 text-sm">Question creation</h3>
-              <p className="text-xs text-gray-400 font-semibold mt-0.5">
-                Total Questions: {questions.length}
+              <h3 className="font-medium text-gray-950 text-sm">Question creation</h3>
+              <p className="text-xs text-gray-400 font-normal mt-1">
+                Total Questions . {questions.length}
               </p>
             </div>
             <button
@@ -381,7 +385,7 @@ export default function QuestionsPage({ params }: PageProps) {
                   onClick={() => setActiveIndex(idx)}
                   className={`group relative flex items-center justify-between rounded-lg border p-3 cursor-pointer transition-all select-none ${
                     isActive
-                      ? 'border-[#5B6BF5] border-l-4 pl-2.5 bg-[#5B6BF5]/5'
+                      ? 'border-[#5B6BF5] border-l-4 pl-2.5 bg-[#5B6BF5]/5 text-[#5B6BF5]'
                       : 'border-gray-200 bg-white hover:border-gray-300'
                   }`}
                 >
@@ -390,19 +394,22 @@ export default function QuestionsPage({ params }: PageProps) {
                       size={16}
                       className={hasContent ? 'text-[#10B981] fill-green-50' : 'text-gray-300'}
                     />
-                    <span className={`text-xs font-semibold ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>
+                    <span className={`text-xs font-medium ${isActive ? 'text-[#5B6BF5]' : 'text-gray-500'}`}>
                       Question {idx + 1}
                     </span>
                   </div>
                   
-                  {/* Remove question */}
-                  <button
-                    onClick={(e) => handleRemoveQuestion(idx, e)}
-                    className="opacity-0 group-hover:opacity-100 rounded-md p-1 hover:bg-red-50 text-gray-400 hover:text-red-600 transition-all focus:outline-none"
-                    title="Delete Question"
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    {/* Remove question */}
+                    <button
+                      onClick={(e) => handleRemoveQuestion(idx, e)}
+                      className="opacity-0 group-hover:opacity-100 rounded-md p-1 hover:bg-red-50 text-gray-400 hover:text-red-600 transition-all focus:outline-none"
+                      title="Delete Question"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                    <ChevronRight size={14} className="text-gray-400" />
+                  </div>
                 </div>
               );
             })}
@@ -413,7 +420,7 @@ export default function QuestionsPage({ params }: PageProps) {
             <Button
               onClick={handleAddQuestion}
               variant="outline"
-              className="w-full text-xs font-bold border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-1.5 h-10 shadow-sm"
+              className="w-full text-xs font-medium border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-1.5 h-10 shadow-sm"
             >
               <Plus size={14} />
               <span>Question</span>
@@ -422,7 +429,7 @@ export default function QuestionsPage({ params }: PageProps) {
               type="button"
               variant="outline"
               disabled
-              className="w-full text-xs font-bold border-gray-100 bg-gray-50/50 text-gray-400 cursor-not-allowed flex items-center justify-center gap-1.5 h-10"
+              className="w-full text-xs font-medium border-gray-100 bg-gray-50/50 text-gray-400 cursor-not-allowed flex items-center justify-center gap-1.5 h-10"
             >
               <span>+ Chapter</span>
             </Button>
@@ -441,14 +448,22 @@ export default function QuestionsPage({ params }: PageProps) {
         )}
 
         {/* Right Side: Main Editing Canvas */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col gap-6">
+        <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col gap-6 bg-[#F7F8FC]">
           
-          {/* Header Action Bar */}
+          {/* Header Action Bar (Breadcrumbs & Publish) */}
           <div className="flex items-center justify-between select-none">
-            <h2 className="text-xl font-bold text-gray-900 tracking-tight">Question Editor</h2>
+            <div className="text-xs text-gray-400 font-normal flex items-center gap-1.5">
+              <span>Test Creation</span>
+              <span>/</span>
+              <span>Create Test</span>
+              <span>/</span>
+              <span className="text-gray-500 font-medium">
+                {test?.type === 'chapter_wise' ? 'Chapterwise' : test?.type === 'pyq' ? 'PYQ' : 'Mock Test'}
+              </span>
+            </div>
             <Button
               onClick={handleSaveAndNext}
-              className="font-semibold shadow-md flex items-center gap-1.5 h-10 px-5"
+              className="font-medium bg-[#5B6BF5] hover:bg-[#4a5ae4] text-white shadow-sm flex items-center gap-1.5 h-9 px-6 rounded-lg text-xs"
               isLoading={saving}
             >
               <span>Publish</span>
@@ -457,36 +472,68 @@ export default function QuestionsPage({ params }: PageProps) {
 
           {/* Test Metadata Overview Panel */}
           {test && (
-            <div className="relative border border-gray-200 rounded-xl p-5 bg-white shadow-sm flex flex-wrap gap-4 items-center justify-between select-none">
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-md uppercase tracking-wider">
-                  {test.type.replace('_', ' ')}
-                </span>
-                <h3 className="font-semibold text-gray-900 text-sm">{test.name}</h3>
-                <span className="text-xs font-bold text-gray-400 uppercase">• {test.difficulty}</span>
+            <div className="relative border border-gray-150 rounded-xl p-5 bg-white shadow-sm flex flex-wrap gap-4 items-center justify-between select-none">
+              <div className="space-y-3 flex-1 min-w-[280px]">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-medium text-white bg-[#1A1A2E] px-2 py-0.5 rounded uppercase tracking-wide">
+                    {test.type === 'chapter_wise' ? 'Chapterwise' : test.type === 'pyq' ? 'PYQ' : 'Mock Test'}
+                  </span>
+                  <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded flex items-center gap-1">
+                    📖 Chapter 1
+                  </span>
+                  <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded capitalize">
+                    {test.difficulty}
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-1 text-xs font-normal text-gray-500">
+                  <div className="flex items-center gap-1">
+                    <span className="w-16 text-gray-400">Subject</span>
+                    <span>: {subjectName}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="w-16 text-gray-400">Topic</span>
+                    <span className="flex items-center gap-1.5">
+                      : {currentTopics.map(t => (
+                        <span key={t.id} className="bg-amber-50 text-amber-600 border border-amber-100 rounded px-1.5 py-0.5 text-[10px]">
+                          {t.name}
+                        </span>
+                      ))}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="w-16 text-gray-400">Sub Topic</span>
+                    <span className="flex items-center gap-1.5">
+                      : {currentSubTopics.map(st => (
+                        <span key={st.id} className="bg-amber-50 text-amber-600 border border-amber-100 rounded px-1.5 py-0.5 text-[10px]">
+                          {st.name}
+                        </span>
+                      ))}
+                    </span>
+                  </div>
+                </div>
               </div>
               
-              <div className="flex items-center gap-6">
-                <div className="flex flex-col gap-0.5 text-center">
-                  <span className="text-xs font-medium text-gray-400">Duration</span>
-                  <span className="text-xs font-bold text-gray-900">{test.total_time} Min</span>
+              <div className="flex items-center gap-4 select-none">
+                {/* Meta details outlined badge block */}
+                <div className="flex items-center gap-2.5 border border-gray-150 rounded-lg p-1.5 px-3 bg-gray-50/35 text-[11px] text-gray-400 font-normal">
+                  <span className="flex items-center gap-1">
+                    ⏱️ {test.total_time} Min
+                  </span>
+                  <span className="text-gray-300">|</span>
+                  <span className="flex items-center gap-1">
+                    📝 {test.total_questions} Q's
+                  </span>
+                  <span className="text-gray-300">|</span>
+                  <span className="flex items-center gap-1">
+                    🏆 {test.total_marks} Marks
+                  </span>
                 </div>
-                <div className="h-6 w-px bg-gray-200" />
-                <div className="flex flex-col gap-0.5 text-center">
-                  <span className="text-xs font-medium text-gray-400">Questions</span>
-                  <span className="text-xs font-bold text-gray-900">{test.total_questions} Qs</span>
-                </div>
-                <div className="h-6 w-px bg-gray-200" />
-                <div className="flex flex-col gap-0.5 text-center">
-                  <span className="text-xs font-medium text-gray-400">Marks</span>
-                  <span className="text-xs font-bold text-gray-900">{test.total_marks} Marks</span>
-                </div>
-                <div className="h-6 w-px bg-gray-200" />
                 
                 {/* Pencil Edit Icon */}
                 <button
                   onClick={() => setEditModalOpen(true)}
-                  className="rounded-lg p-2 text-gray-400 hover:bg-gray-50 hover:text-amber-600 transition-colors focus:outline-none"
+                  className="rounded-lg p-2 text-gray-400 hover:bg-gray-50 hover:text-amber-600 transition-colors focus:outline-none cursor-pointer"
                   title="Edit test configuration"
                 >
                   <Pencil size={15} />
@@ -497,59 +544,59 @@ export default function QuestionsPage({ params }: PageProps) {
 
           {/* Discard Links */}
           <div className="flex items-center justify-between -mb-2 select-none">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              Selected: Question {activeIndex + 1} of {questions.length}
+            <span className="text-xs font-normal text-gray-400 uppercase tracking-wider">
+              Question {activeIndex + 1} <span className="text-gray-300">/</span> {questions.length}
             </span>
             {isDirty && (
               <button
                 onClick={handleDeleteAllEdits}
-                className="text-xs font-bold text-red-500 hover:text-red-600 hover:underline focus:outline-none"
+                className="text-xs text-red-500 hover:text-red-600 hover:underline focus:outline-none cursor-pointer"
               >
-                Delete All Edits
+                🗑️ Delete All Edits
               </button>
             )}
           </div>
 
           {/* Active Question Editor Card */}
           {activeQuestion && (
-            <div className="border border-gray-200 rounded-xl p-6 bg-white shadow-sm space-y-6">
+            <div className="border border-gray-150 rounded-xl p-6 bg-white shadow-sm space-y-6">
               
               {/* Question card header */}
               <div className="flex items-center justify-between select-none">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-gray-900">
-                    Question {activeIndex + 1}
+                  <span className="text-sm font-medium text-gray-900">
+                    Question {activeIndex + 1} <span className="text-gray-300 font-normal">/</span> {questions.length}
                   </span>
-                  <div className="flex rounded-md border border-gray-200 bg-gray-50 p-0.5">
+                  <div className="flex rounded-md border border-gray-150 bg-gray-50 p-0.5">
                     <button
                       type="button"
-                      className="px-2 py-1 text-[10px] font-bold bg-white text-gray-900 rounded border border-gray-150 select-none uppercase tracking-wide"
+                      className="px-2 py-0.5 text-[9px] font-medium bg-white text-gray-900 rounded border border-gray-100 select-none uppercase tracking-wide cursor-pointer"
                     >
-                      MCQ
+                      + MCQ
                     </button>
                     <button
                       type="button"
                       disabled
-                      className="px-2 py-1 text-[10px] font-bold text-gray-400 select-none cursor-not-allowed uppercase tracking-wide"
+                      className="px-2 py-0.5 text-[9px] font-medium text-gray-400 select-none cursor-not-allowed uppercase tracking-wide"
                     >
                       + CSV
                     </button>
                   </div>
                 </div>
 
-                {/* Left/Right controls */}
-                <div className="flex items-center gap-1.5">
+                {/* Left/Right controls (Header) */}
+                <div className="flex items-center gap-1">
                   <button
                     disabled={activeIndex === 0}
                     onClick={() => setActiveIndex(activeIndex - 1)}
-                    className="rounded-lg p-1.5 border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-800 disabled:opacity-30 disabled:hover:bg-transparent focus:outline-none"
+                    className="rounded-lg p-1 border border-gray-200 text-gray-400 hover:bg-gray-50 hover:text-gray-800 disabled:opacity-30 disabled:hover:bg-transparent focus:outline-none cursor-pointer"
                   >
                     <ChevronLeft size={14} />
                   </button>
                   <button
                     disabled={activeIndex === questions.length - 1}
                     onClick={() => setActiveIndex(activeIndex + 1)}
-                    className="rounded-lg p-1.5 border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-800 disabled:opacity-30 disabled:hover:bg-transparent focus:outline-none"
+                    className="rounded-lg p-1 border border-gray-200 text-gray-400 hover:bg-gray-50 hover:text-gray-800 disabled:opacity-30 disabled:hover:bg-transparent focus:outline-none cursor-pointer"
                   >
                     <ChevronRight size={14} />
                   </button>
@@ -558,7 +605,6 @@ export default function QuestionsPage({ params }: PageProps) {
 
               {/* Tiptap Rich Text Editor */}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-700 select-none">Question Content</label>
                 <TiptapEditor
                   value={activeQuestion.question}
                   onChange={(val) => updateActiveQuestion('question', val)}
@@ -566,8 +612,8 @@ export default function QuestionsPage({ params }: PageProps) {
               </div>
 
               {/* Options Section */}
-              <div className="space-y-4">
-                <span className="text-sm font-medium text-[#5B6BF5] block select-none border-b border-gray-100 pb-1.5">
+              <div className="space-y-4 pt-2">
+                <span className="text-sm font-medium text-gray-900 block select-none">
                   Type the options below
                 </span>
 
@@ -581,22 +627,22 @@ export default function QuestionsPage({ params }: PageProps) {
                         <button
                           type="button"
                           onClick={() => updateActiveQuestion('correct_option', optKey)}
-                          className={`h-5 w-5 rounded-full flex items-center justify-center border font-bold text-[10px] select-none transition-all ${
+                          className={`h-5 w-5 rounded-full flex items-center justify-center border text-[10px] select-none transition-all cursor-pointer ${
                             isSelected
-                              ? 'border-[#5B6BF5] bg-[#5B6BF5] text-white'
-                              : 'border-gray-300 hover:border-gray-400 text-gray-400'
+                              ? 'border-[#5B6BF5] bg-white text-[#5B6BF5] ring-2 ring-[#5B6BF5]/15 font-semibold'
+                              : 'border-gray-300 hover:border-gray-400 text-gray-400 bg-white'
                           }`}
                         >
-                          {alphabet}
+                          {isSelected ? '✓' : ''}
                         </button>
                         
                         {/* Option text input */}
                         <div className="flex-1">
                           <Input
-                            placeholder={`Type Option ${alphabet}`}
+                            placeholder="Type Option here"
                             value={activeQuestion[optKey]}
                             onChange={(e) => updateActiveQuestion(optKey, e.target.value)}
-                            className="bg-transparent border-gray-200 focus:ring-[#5B6BF5]/10"
+                            className="bg-transparent border-gray-250 focus:ring-[#5B6BF5]/10 h-10 text-sm"
                           />
                         </div>
 
@@ -604,7 +650,7 @@ export default function QuestionsPage({ params }: PageProps) {
                         <button
                           type="button"
                           onClick={() => updateActiveQuestion(optKey, '')}
-                          className="rounded-lg p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 focus:outline-none transition-colors"
+                          className="rounded-lg p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 focus:outline-none transition-colors cursor-pointer"
                           title="Clear option text"
                         >
                           <Trash2 size={15} />
@@ -616,23 +662,43 @@ export default function QuestionsPage({ params }: PageProps) {
               </div>
 
               {/* Explanation textarea */}
-              <Textarea
-                label="Add Solution (Explanation)"
-                placeholder="Type explanation / step-by-step solution here..."
-                value={activeQuestion.explanation}
-                onChange={(e) => updateActiveQuestion('explanation', e.target.value)}
-              />
+              <div className="space-y-2 pt-2">
+                <div className="text-sm font-medium text-gray-900 select-none">Add Solution</div>
+                <Textarea
+                  placeholder="Type here"
+                  value={activeQuestion.explanation}
+                  onChange={(e) => updateActiveQuestion('explanation', e.target.value)}
+                />
+              </div>
+
+              {/* Center Chevron Nav Controls below explanation */}
+              <div className="flex items-center justify-center gap-6 py-2 select-none">
+                <button
+                  disabled={activeIndex === 0}
+                  onClick={() => setActiveIndex(activeIndex - 1)}
+                  className="text-gray-400 hover:text-gray-800 disabled:opacity-30 focus:outline-none cursor-pointer"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <button
+                  disabled={activeIndex === questions.length - 1}
+                  onClick={() => setActiveIndex(activeIndex + 1)}
+                  className="text-gray-400 hover:text-gray-800 disabled:opacity-30 focus:outline-none cursor-pointer"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </div>
 
               {/* Settings selectors */}
-              <div className="border-t border-gray-150 pt-5 space-y-4">
-                <span className="text-sm font-semibold text-gray-700 block select-none">
+              <div className="border-t border-gray-100 pt-5 space-y-4">
+                <span className="text-sm font-medium text-gray-900 block select-none">
                   Question settings
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {/* Difficulty dropdown */}
                   <Select
                     label="Level of Difficulty"
-                    placeholder="Select Difficulty"
+                    placeholder="Select from Drop-down"
                     options={[
                       { value: 'easy', label: 'Easy' },
                       { value: 'medium', label: 'Medium' },
@@ -645,7 +711,7 @@ export default function QuestionsPage({ params }: PageProps) {
                   {/* Topic dropdown */}
                   <Select
                     label="Topic"
-                    placeholder="Select Topic"
+                    placeholder="Select from Drop-down"
                     options={currentTopics.map((t) => ({ value: t.id, label: t.name }))}
                     value={activeQuestion.topic}
                     onChange={(e) => {
@@ -658,7 +724,7 @@ export default function QuestionsPage({ params }: PageProps) {
                   {/* SubTopic dropdown */}
                   <Select
                     label="Sub-topic"
-                    placeholder="Select Sub-topic"
+                    placeholder="Select from Drop-down"
                     options={currentSubTopics.map((st) => ({ value: st.id, label: st.name }))}
                     value={activeQuestion.sub_topic}
                     onChange={(e) => updateActiveQuestion('sub_topic', e.target.value)}
@@ -672,19 +738,20 @@ export default function QuestionsPage({ params }: PageProps) {
 
           {/* Bottom Nav Actions */}
           <div className="flex items-center justify-between border-t border-gray-150 pt-6 select-none">
-            <button
+            <Button
+              type="button"
               onClick={handleExitClick}
-              className="text-sm font-bold text-red-500 hover:text-red-600 hover:underline focus:outline-none"
+              variant="outline"
+              className="text-sm font-medium text-red-500 hover:bg-red-50 hover:text-red-600 border-red-200 h-11 px-6 shadow-sm"
             >
               Exit Test Creation
-            </button>
+            </Button>
             <Button
               onClick={handleSaveAndNext}
-              className="font-semibold px-8 shadow-md flex items-center gap-1.5 h-11"
+              className="font-medium bg-[#5B6BF5] hover:bg-[#4a5ae4] text-white px-10 shadow-md h-11 rounded-lg"
               isLoading={saving}
             >
               <span>Next</span>
-              <ArrowRight size={16} />
             </Button>
           </div>
 

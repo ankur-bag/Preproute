@@ -103,11 +103,19 @@ async function handler(req: NextRequest, { params }: { params: Promise<{ path: s
   if (!token) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
 
   const payload = verifyToken(token);
-  if (!payload) return NextResponse.json({ success: false, message: 'Invalid token' }, { status: 401 });
+  if (!payload) {
+    const response = NextResponse.json({ success: false, message: 'Invalid token' }, { status: 401 });
+    response.cookies.delete('token');
+    return response;
+  }
 
   // 2. Retrieve external token from MongoDB
   const session = await dbGetSession(payload.userId);
-  if (!session) return NextResponse.json({ success: false, message: 'Session expired' }, { status: 401 });
+  if (!session) {
+    const response = NextResponse.json({ success: false, message: 'Session expired' }, { status: 401 });
+    response.cookies.delete('token');
+    return response;
+  }
 
   const resolvedParams = await params;
   const path = resolvedParams.path;

@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/jwt';
+import { dbGetSession } from '@/lib/dbController';
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,10 +18,23 @@ export async function GET(req: NextRequest) {
 
     const payload = verifyToken(token);
     if (!payload || !payload.user) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { success: false, message: 'Invalid token' },
         { status: 401 }
       );
+      response.cookies.delete('token');
+      return response;
+    }
+
+    // Verify session still exists in DB/memory cache
+    const session = await dbGetSession(payload.userId);
+    if (!session) {
+      const response = NextResponse.json(
+        { success: false, message: 'Session expired' },
+        { status: 401 }
+      );
+      response.cookies.delete('token');
+      return response;
     }
 
     return NextResponse.json({
