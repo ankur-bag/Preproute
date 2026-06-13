@@ -51,3 +51,38 @@ body {
 .ProseMirror p {
   margin-bottom: 0.5rem;
 }
+
+/* UI Enhancements: Don't use bold fonts, use medium/normal instead */
+strong, 
+b, 
+.font-bold, 
+.font-semibold, 
+.font-extrabold, 
+h1, 
+h2, 
+h3, 
+h4, 
+th {
+  font-weight: 500 !important;
+}
+
+/* UI Enhancements: Force cursor pointer on all clickable elements */
+button,
+a,
+select,
+input[type="button"],
+input[type="submit"],
+input[type="radio"],
+input[type="checkbox"],
+[role="button"],
+label {
+  cursor: pointer !important;
+}
+
+/* Ensure disabled elements keep the correct cursor */
+button:disabled,
+input:disabled,
+select:disabled,
+.cursor-not-allowed {
+  cursor: not-allowed !important;
+}
